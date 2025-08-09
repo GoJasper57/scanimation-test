@@ -19,7 +19,7 @@ let startTouchX = 0;
 let isTouchDragging = false;
 
 function preload() {
-  baseImage = loadImage("base.png"); // 你的合成底图
+  baseImage = loadImage("scanimation_base.png"); // 你的合成底图
 }
 
 function setup() {
