@@ -10,18 +10,43 @@ const moveSpeed = 0.5; // 每帧移动速度
 // 移动方向：-1 向左，0 停止，1 向右
 let moveDir = 0;
 
+// 拖拽相关（只在画布上生效）
+let isDragging = false;
+let lastMouseX = 0;
+let canvasEl = null;
+
 function preload() {
   baseImage = loadImage("base.png");
 }
 
 function setup() {
-  createCanvas(baseImage.width, baseImage.height);
+  // 画布
+  canvasEl = createCanvas(baseImage.width, baseImage.height);
+  canvasEl.style('cursor', 'grab');
 
+  // 只在“画布”上监听按下/松开
+  canvasEl.mousePressed(() => {
+    if (mouseX >= 0 && mouseX <= width && mouseY >= 0 && mouseY <= height) {
+      isDragging = true;
+      lastMouseX = mouseX;
+      moveDir = 0;                // 拖拽时暂停自动移动
+      canvasEl.style('cursor', 'grabbing');
+    }
+  });
+
+  canvasEl.mouseReleased(() => {
+    isDragging = false;
+    canvasEl.style('cursor', 'grab');
+  });
+
+  // 遮罩图
   gridOverlayImage = createGraphics(width, height);
   createGridOverlayImage();
 
+  // 初始偏移
   sliderPosition = -width / 2;
 
+  // 按钮
   createButtons();
 }
 
@@ -31,9 +56,16 @@ function draw() {
   // 底图
   image(baseImage, 0, 0);
 
-  // 根据方向移动
-  if (moveDir !== 0) {
+  // 自动移动（拖拽时不动）
+  if (!isDragging && moveDir !== 0) {
     sliderPosition += moveDir * moveSpeed;
+  }
+
+  // 鼠标拖拽位移增量
+  if (isDragging) {
+    const dx = mouseX - lastMouseX;
+    sliderPosition += dx;
+    lastMouseX = mouseX;
   }
 
   // 遮罩
@@ -87,6 +119,7 @@ function createButtons() {
   container.style('justify-content', 'center');
   container.style('align-items', 'center');
   container.style('z-index', '10');
+  container.style('pointer-events', 'auto'); // 确保按钮能点击
 
   // mask on/off：点一下切换遮罩
   const btnMask = createButton('mask on/off');
@@ -121,8 +154,7 @@ function createButtons() {
   container.child(btnRight);
 }
 
-/* 可选：键盘行为（与按钮一致，保留的话更方便调试）
-   ← 开始向左；→ 开始向右；空格切换遮罩；P 暂停 */
+/* 键盘行为：← 左移；→ 右移；空格 切换遮罩；P 暂停 */
 function keyPressed() {
   if (keyCode === LEFT_ARROW) moveDir = -1;
   else if (keyCode === RIGHT_ARROW) moveDir = 1;
